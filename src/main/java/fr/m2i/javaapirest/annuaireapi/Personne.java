@@ -1,6 +1,12 @@
 
 package fr.m2i.javaapirest.annuaireapi;
 
+// par defaut Jakson utilise JSON. 
+
+import javax.xml.bind.annotation.XmlRootElement;
+
+//on ajouter des annotation pour autre format serialisation/deserialisation xml
+@XmlRootElement(name="personne")
 public class Personne {
     private Long id;
     
@@ -14,7 +20,7 @@ public class Personne {
         this.prenom = prenom;
     }
 
-    // necessaire pour Jax
+    // necessaire pour Jakson deserialisation
     public Personne() {
     }
     
