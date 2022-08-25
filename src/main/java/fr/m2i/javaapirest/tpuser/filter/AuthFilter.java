@@ -1,6 +1,7 @@
 
 package fr.m2i.javaapirest.tpuser.filter;
 
+import fr.m2i.javaapirest.tpuser.model.Role;
 import fr.m2i.javaapirest.tpuser.model.User;
 import fr.m2i.javaapirest.tpuser.util.BasicAuth;
 import java.io.IOException;
@@ -11,12 +12,9 @@ import javax.ws.rs.container.PreMatching;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 
-@Provider     // pour javax considerer comme un filter
-@PreMatching  // entrer dans le filter avant de trouver la methode qui match avec le path
+@Provider
+@PreMatching
 public class AuthFilter implements ContainerRequestFilter {
-    
-    //@Context
-    //public HttpServletRequest request;
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
@@ -59,8 +57,7 @@ public class AuthFilter implements ContainerRequestFilter {
 
     public User checkUser(String email, String password) {
         // au lieu d'acceder à la base, simuler un admin. ressource user accessible uniquement par des admin
-        
-        User admin = new User("Super", "Admin", "SUPER_ADMIN", "super@admin.com", "admin");
+        User admin = new User("Super", "Admin", Role.admin, "super@admin.com", "admin");
 
         if (admin.getEmail().equals(email) && admin.getPassword().equals(password)) {
             return admin;

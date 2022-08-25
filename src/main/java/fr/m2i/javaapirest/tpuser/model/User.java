@@ -1,42 +1,40 @@
 
 package fr.m2i.javaapirest.tpuser.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import javax.persistence.*;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.xml.bind.annotation.XmlRootElement;
 
-@XmlRootElement
 @Entity
-@Table(name="utilisateurs")
+@Table(name = "utilisateurs")
 public class User {
-    
-    @Id 
-   @GeneratedValue(strategy= GenerationType.IDENTITY)
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    @Column(name="lastname",length=100, nullable=false)
+
+    @Column(name = "lastname", length = 100, nullable = false)
     private String lastname;
-    @Column(name="firstname",length=100, nullable=false)
+
+    @Column(name = "firstname", length = 100, nullable = false)
     private String firstname;
-    @Column(name="role",columnDefinition="enum('normal','admin')", nullable=false)
-    private String role;
-    @Column(name="email", length=100,unique=true, nullable=false)
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", columnDefinition = "ENUM('normal','admin') NOT NULL")
+    private Role role;
+
+    @Column(name = "email", length = 100, unique = true, nullable = false)
     private String email;
-    
-    @Column(name="password",length=40, nullable=false)
-    @JsonIgnore
+
+    @Column(name = "password", length = 40, nullable = false)
+    @JsonProperty(access = Access.WRITE_ONLY)
     private String password;
-    
+
     public User() {
         
     }
 
-    public User(String lastname, String firstname, String role, String email, String password) {
+    public User(String lastname, String firstname, Role role, String email, String password) {
         this.lastname = lastname;
         this.firstname = firstname;
         this.role = role;
@@ -68,11 +66,11 @@ public class User {
         this.firstname = firstname;
     }
 
-    public String getRole() {
+    public Role getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(Role role) {
         this.role = role;
     }
 
@@ -88,31 +86,69 @@ public class User {
         return password;
     }
 
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     public void setPassword(String password) {
         this.password = password;
     }
-    
-    public void copy(User userData){
-        
-        if(userData.getFirstname() != null && !"".equals(userData.getFirstname())){
-            this.firstname = userData.getFirstname();
+
+    public void copy(User data) {
+
+        if (data == null) {
+            return;
         }
-        
-        if(userData.getLastname()!= null && !"".equals(userData.getLastname())){
-            this.lastname = userData.getLastname();
+
+        if (data.getLastname() != null) {
+            this.lastname = data.getLastname();
         }
-        
-        if(userData.getEmail()!= null && !"".equals(userData.getEmail())){
-            this.email = userData.getEmail();
+
+        if (data.getFirstname() != null) {
+            this.firstname = data.getFirstname();
         }
-        
-        if(userData.getRole()!= null && !"".equals(userData.getRole())){
-            this.role = userData.getRole();
+
+        if (data.getEmail() != null) {
+            this.email = data.getEmail();
         }
-        
-        if(userData.getPassword()!= null && !"".equals(userData.getPassword())){
-            this.password = userData.getPassword();
+
+        if (data.getPassword() != null) {
+            this.password = data.getPassword();
+        }
+
+        if (data.getRole() != null) {
+            this.role = data.getRole();
         }
     }
+
+    // on peut ajouter le test des string vide ""
+    public boolean hasAFieldEmpty() {
+        return getLastname() == null ||
+                getFirstname() == null ||
+                getEmail() == null ||
+                getPassword() == null ||
+                getRole() == null;
+    }
 }
+   
+
+
+//public void copy(User userData){
+//
+//    if(userData.getFirstname() != null && !"".equals(userData.getFirstname())){
+//        this.firstname = userData.getFirstname();
+//    }
+//
+//    if(userData.getLastname()!= null && !"".equals(userData.getLastname())){
+//        this.lastname = userData.getLastname();
+//    }
+//
+//    if(userData.getEmail()!= null && !"".equals(userData.getEmail())){
+//        this.email = userData.getEmail();
+//    }
+//
+//    if(userData.getRole()!= null && !"".equals(userData.getRole())){
+//        this.role = userData.getRole();
+//    }
+//
+//    if(userData.getPassword()!= null && !"".equals(userData.getPassword())){
+//        this.password = userData.getPassword();
+//    }
+//}
+

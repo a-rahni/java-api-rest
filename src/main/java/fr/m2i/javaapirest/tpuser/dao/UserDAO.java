@@ -1,84 +1,52 @@
 
 package fr.m2i.javaapirest.tpuser.dao;
 
-import fr.m2i.javaapirest.tpuser.exception.UserDaoErrorException;
-import fr.m2i.javaapirest.tpuser.exception.UserNotFoundException;
+import fr.m2i.javaapirest.tpuser.exception.NotFoundException;
 import fr.m2i.javaapirest.tpuser.model.User;
 import fr.m2i.javaapirest.tpuser.util.SessionHelper;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import javax.persistence.Query;
-import javax.persistence.TypedQuery;
 
 public class UserDAO {
-    
-    private EntityManager entityManager;
-    
-    public UserDAO(){
-        entityManager = SessionHelper.getEntityManager();
+
+    private final EntityManager entityManager;
+
+    public UserDAO() {
+        this.entityManager = SessionHelper.getEntityManager();
+    }
+
+    public List<User> findAll() {
+        Query query = entityManager.createQuery("select u from User u");
+        return query.getResultList();
     }
     
-     public List<User> findAll() {
-        Query findAllQuery = entityManager.createQuery("select u from User u");
-        return findAllQuery.getResultList();
-    }
-     
-     public User findById(Integer id){
-         User founded = null;
-        try{
-            founded = entityManager.find(User.class, id);
-        }catch(Exception e){
-            throw new UserDaoErrorException("An error occurred ", e.getCause());
+    public User findById(Integer id) throws Exception {
+
+        if (id == null) {
+            throw new Exception("findById|Param id cannot be null");
+            // Si l'exception est levé la méthode s'arrête ici
         }
+
+        User founded = entityManager.find(User.class, id);
+
         if (founded == null) {
-            throw new UserNotFoundException("User was not found");
+            throw new NotFoundException("findById|User with id :" + id + " was not found");
+            // Si l'exception est levé la méthode s'arrête ici
         }
+
         return founded;
     }
-     
-     public User findByEmail(String email) { // email est unique
+    
+    public void create(User userToCreate) throws Exception {
 
-        if (email == null || "".equals(email)) {
-            System.out.println("L'email n'est pas valide !");
-            return null;
+        if (userToCreate == null) {
+            throw new Exception("create|Param user cannot be null");
         }
-        try{
-            TypedQuery<User> findByUserQuery = entityManager.createQuery("select u from User u where u.email = ?1", User.class);
-            findByUserQuery.setParameter(1, email);
 
-            return findByUserQuery.getSingleResult();
-         }catch(Exception e){
-             throw new UserDaoErrorException("An error occurred ", e.getCause());
-         }
-    }
-     
-     public List<User> findByEmailOrLastname(String str, int count) { 
-        TypedQuery<User> query = entityManager.createQuery("select u from User u where u.email = ?1 OR u.lastname=?2", User.class);
-        query.setMaxResults(count);
-        query.setParameter(1, str);
-        query.setParameter(2, str);
-
-        return query.getResultList();       
-    }
-     
-     public boolean checkValidityUserData(User user){
-         if(user == null || user.getLastname()==null || "".equals(user.getLastname())
-            || user.getFirstname()==null || "".equals(user.getFirstname())
-            || user.getEmail()==null || "".equals(user.getEmail())
-            || user.getPassword()==null || "".equals(user.getPassword())
-            || user.getRole()==null || "".equals(user.getRole())){
-             
-             return false;
-         }
-         return true;
-     }
-     
-     public User create(User user) {
-
-        if (user == null) {
-            System.out.println("L'objet user ne peut pas être null");
-            return null;
+        if (userToCreate.hasAFieldEmpty()) {
+            throw new Exception("create|All fields in user must be filled");
         }
 
         EntityTransaction tx = null;
@@ -86,30 +54,33 @@ public class UserDAO {
         try {
             tx = entityManager.getTransaction();
             tx.begin();
-            
-            entityManager.persist(user);
-            
+
+            entityManager.persist(userToCreate);
+
             tx.commit();
-            
-            return findByEmail(user.getEmail());
-            
         } catch (Exception e) {
+            System.out.println("create|A error occured during persist");
+            System.out.println("Exception message : " + e.getMessage());
+
             if (tx != null) {
                 tx.rollback();
             }
-            throw new UserDaoErrorException("An error occurred ", e.getCause());
+
+            throw e;
         }
     }
-     
-      public User update(Integer id, User user) {
+    
+    public void update(Integer id, User userData) throws Exception {
 
+        // La gestion d'erreur est faite dans le find by id
+        // La bonne exception sera levée si l'id passé param n'est pas valide ou si l'utilisateur n'est pas trouvé
         User userToUpdate = findById(id);
         
-        if (userToUpdate == null) {
-            throw new UserNotFoundException("User was not found");
+        if (userData == null) {
+            throw new Exception("update|Param user cannot be null");
         }
-
-        userToUpdate.copy(user);
+        
+        userToUpdate.copy(userData);
 
         EntityTransaction tx = null;
 
@@ -120,20 +91,45 @@ public class UserDAO {
             entityManager.merge(userToUpdate);
 
             tx.commit();
-            return findById(id);
-            
         } catch (Exception e) {
+            System.out.println("update|A error occured during merge");
+            System.out.println("Exception message : " + e.getMessage());
+
             if (tx != null) {
                 tx.rollback();
             }
-            throw new UserDaoErrorException("An error occurred ", e.getCause());
-            
+
+            throw e;
         }
     }
-      
-       public boolean delete(Integer id) {
+    
+     public List<User> search(String query, Integer count) throws Exception {
+
+        if (query == null) {
+            throw new Exception("search|Param query is mandatory");
+        }
+
+        Query searchQuery = entityManager.createQuery("select u from User u where u.lastname like :query or u.email like :query");
+        searchQuery.setParameter("query", "%" + query + "%");
+
+        if (count != null && count != 0) {
+            searchQuery.setMaxResults(count);
+        }
+
+        List<User> users = searchQuery.getResultList();
+
+        if (users == null || users.isEmpty()) {
+            throw new NotFoundException("search|No user founded for query :" +  query);
+        }
         
-        User userToDelete = findById(id);
+        return users;
+    }
+     
+     public void delete(Integer id) throws Exception {
+
+        // La gestion d'erreur est faite dans le find by id
+        // La bonne exception sera levée si l'id passé param n'est pas valide ou si l'utilisateur n'est pas trouvé
+        User toDelete = findById(id);
 
         EntityTransaction tx = null;
 
@@ -141,18 +137,19 @@ public class UserDAO {
             tx = entityManager.getTransaction();
             tx.begin();
 
-            entityManager.remove(userToDelete);
+            entityManager.remove(toDelete);
 
             tx.commit();
-            return true;
         } catch (Exception e) {
+            System.out.println("delete|A error occured during delete");
+            System.out.println("Exception message : " + e.getMessage());
+
             if (tx != null) {
                 tx.rollback();
             }
-            throw new UserDaoErrorException("An error occurred ", e.getCause());
 
+            throw e;
         }
-        
     }
     
 }
