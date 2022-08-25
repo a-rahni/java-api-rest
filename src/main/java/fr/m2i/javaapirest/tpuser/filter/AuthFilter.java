@@ -58,6 +58,8 @@ public class AuthFilter implements ContainerRequestFilter {
     }
 
     public User checkUser(String email, String password) {
+        // au lieu d'acceder à la base, simuler un admin. ressource user accessible uniquement par des admin
+        
         User admin = new User("Super", "Admin", "SUPER_ADMIN", "super@admin.com", "admin");
 
         if (admin.getEmail().equals(email) && admin.getPassword().equals(password)) {
